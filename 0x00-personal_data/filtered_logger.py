@@ -1,38 +1,34 @@
 #!/usr/bin/env python3
 """
-Module for logging with PII redaction using RedactingFormatter.
+Module for connecting to a secure MySQL database using environment variables.
 """
 
-import logging
-import re
-from typing import List
+import os
+import mysql.connector
+from mysql.connector.connection import MySQLConnection
+from typing import Optional
 
-def filter_datum(fields: List[str], redaction: str, message: str, separator: str) -> str:
+def get_db() -> MySQLConnection:
     """
-    Obfuscate specified fields in a log message by replacing
-    them with a redaction string.
+    Connect to a MySQL database using credentials from environment variables.
+    Returns:
+        MySQLConnection: a connection object to the database
     """
-    pattern = '|'.join(f'{field}=[^ {separator}]*' for field in fields)
-    return re.sub(pattern, lambda m: f"{m.group(0).split('=')[0]}={redaction}", message)
+    # Retrieve database credentials from environment variables
+    user = os.getenv("PERSONAL_DATA_DB_USERNAME", "root")
+    password = os.getenv("PERSONAL_DATA_DB_PASSWORD", "")
+    host = os.getenv("PERSONAL_DATA_DB_HOST", "localhost")
+    database = os.getenv("PERSONAL_DATA_DB_NAME")
 
-class RedactingFormatter(logging.Formatter):
-    """ Redacting Formatter class for logging PII fields """
+    # Ensure that the database name is provided
+    if not database:
+        raise ValueError("Database name not provided. Set PERSONAL_DATA_DB_NAME.")
 
-    REDACTION = "***"
-    FORMAT = "[HOLBERTON] %(name)s %(levelname)s %(asctime)-15s: %(message)s"
-    SEPARATOR = ";"
-
-    def __init__(self, fields: List[str]):
-        """
-        Initialize RedactingFormatter with fields to be redacted.
-        """
-        super(RedactingFormatter, self).__init__(self.FORMAT)
-        self.fields = fields
-
-    def format(self, record: logging.LogRecord) -> str:
-        """
-        Format log record with PII fields redacted.
-        """
-        record.msg = filter_datum(self.fields, self.REDACTION, record.msg, self.SEPARATOR)
-        return super().format(record)
+    # Establish and return the database connection
+    return mysql.connector.connect(
+        user=user,
+        password=password,
+        host=host,
+        database=database
+    )
 
