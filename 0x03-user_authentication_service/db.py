@@ -17,8 +17,8 @@ class DB:
     def __init__(self) -> None:
         """Initialize a new DB instance"""
         self._engine = create_engine("sqlite:///a.db", echo=True)
-        Base.metadata.drop_all(self._engine)  # Drops existing tables
-        Base.metadata.create_all(self._engine)  # Creates the tables
+        Base.metadata.drop_all(self._engine)
+        Base.metadata.create_all(self._engine)
         self.__session = None
 
     @property
@@ -37,23 +37,32 @@ class DB:
         return user
 
     def find_user_by(self, **kwargs) -> User:
-        """
-        Find a user by arbitrary keyword arguments.
-
-        Args:
-            **kwargs: Arbitrary keyword arguments for filtering.
-
-        Returns:
-            User: The first user found that matches the criteria.
-
-        Raises:
-            NoResultFound: If no user matches the criteria.
-            InvalidRequestError: If invalid arguments are passed.
-        """
+        """Find a user by arbitrary keyword arguments"""
         try:
             return self._session.query(User).filter_by(**kwargs).one()
         except NoResultFound:
             raise NoResultFound("No user found matching the criteria.")
         except InvalidRequestError:
             raise InvalidRequestError("Invalid query arguments provided.")
+
+    def update_user(self, user_id: int, **kwargs) -> None:
+        """
+        Update a user's attributes in the database.
+
+        Args:
+            user_id (int): The ID of the user to update.
+            **kwargs: Arbitrary keyword arguments for the attributes to update.
+
+        Raises:
+            ValueError: If an invalid attribute is provided.
+        """
+        user = self.find_user_by(id=user_id)  # Locate the user
+
+        # Update attributes
+        for key, value in kwargs.items():
+            if not hasattr(user, key):  # Check if attribute exists
+                raise ValueError(f"Attribute '{key}' does not exist on User.")
+            setattr(user, key, value)  # Update attribute
+
+        self._session.commit()  # Save changes
 
