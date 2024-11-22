@@ -1,28 +1,28 @@
-from sqlalchemy.orm.exc import NoResultFound
-
 class Auth:
     """Authentication class to interact with users and sessions."""
 
     def __init__(self):
         self._db = DB()
 
-    def get_user_from_session_id(self, session_id):
+    def destroy_session(self, user_id):
         """
-        Retrieves the user associated with the given session_id.
+        Destroys the session of the user by setting session_id to None.
 
         Args:
-            session_id (str): The session ID of the user.
+            user_id (int): The ID of the user whose session should be destroyed.
 
         Returns:
-            User or None: The user object associated with the session ID, or None if no user found.
+            None
         """
-        if session_id is None:
-            return None
-
+        # Find the user by ID
         try:
-            # Assuming that the session_id is stored in the user object.
-            user = self._db.find_user_by(session_id=session_id)
-            return user
+            user = self._db.find_user_by(id=user_id)
         except NoResultFound:
             return None
+
+        # Update the session_id to None
+        user.session_id = None
+
+        # Commit the changes to the database
+        self._db.session.commit()
 
