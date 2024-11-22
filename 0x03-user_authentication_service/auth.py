@@ -1,24 +1,28 @@
-#!/usr/bin/env python3
-"""
-Auth module for user authentication.
-"""
-
-import uuid
-from db import DB
-
+from sqlalchemy.orm.exc import NoResultFound
 
 class Auth:
-    """Auth class to interact with the authentication database."""
+    """Authentication class to interact with users and sessions."""
 
     def __init__(self):
         self._db = DB()
 
-    def _generate_uuid(self) -> str:
+    def get_user_from_session_id(self, session_id):
         """
-        Generate a new UUID string.
+        Retrieves the user associated with the given session_id.
+
+        Args:
+            session_id (str): The session ID of the user.
 
         Returns:
-            str: A string representation of a new UUID.
+            User or None: The user object associated with the session ID, or None if no user found.
         """
-        return str(uuid.uuid4())
+        if session_id is None:
+            return None
+
+        try:
+            # Assuming that the session_id is stored in the user object.
+            user = self._db.find_user_by(session_id=session_id)
+            return user
+        except NoResultFound:
+            return None
 
